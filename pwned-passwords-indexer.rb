@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'fileutils'
 require 'optparse'
+require 'fileutils'
 
 include FileUtils
 
