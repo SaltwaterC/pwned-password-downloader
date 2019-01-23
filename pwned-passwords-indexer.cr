@@ -64,19 +64,16 @@ File.open(options[:pwn]) do |fd|
   ostart = 0
 
   fd.each_line do |line|
-    if line.starts_with?(prev)
-      next
-    else
-      offset = fd.pos - line.bytesize - 2
-      dir = line[(0..1)]
-      oend = offset
-      File.write(
-        "#{options[:index]}/#{dir}/#{prev}",
-        "s: #{ostart}\ne: #{oend}"
-      )
-      ostart = offset
-    end
+    next if line.starts_with?(prev)
 
+    offset = fd.pos - line.bytesize - 2
+    dir = line[(0..1)]
+    oend = offset
+    File.write(
+      "#{options[:index]}/#{dir}/#{prev}",
+      "s: #{ostart}\ne: #{oend}"
+    )
+    ostart = offset
     prev = line[(0..3)]
   end
 

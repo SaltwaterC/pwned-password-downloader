@@ -6,14 +6,14 @@ require 'fileutils'
 include FileUtils
 
 options = {
-  index: "#{ENV["HOME"]}/.pwn/idx"
+  index: "#{ENV['HOME']}/.pwn/idx"
 }
 
 bin = File.basename($PROGRAM_NAME)
 
 op = OptionParser.new do |parser|
   parser.banner = "Usage: #{bin} --pwn " \
-                  "pwned-passwords-sha1-ordered-by-hash-v4.txt"
+                  'pwned-passwords-sha1-ordered-by-hash-v4.txt'
 
   desc_pwn = 'Path to pwned passwords file'
   parser.on('-p', '--pwn pwned-passwords.txt', desc_pwn) do |opt|
@@ -48,7 +48,7 @@ if options[:pwn].nil?
   exit(3)
 end
 
-unless Dir.exists?(options[:index])
+unless Dir.exist?(options[:index])
   mkdir_p(options[:index])
   (0..255).each do |dir|
     dir = dir.to_s(16).upcase.rjust(2, '0')
@@ -61,19 +61,16 @@ File.open(options[:pwn]) do |fd|
   ostart = 0
 
   fd.each_line do |line|
-    if line.start_with?(prev)
-      next
-    else
-      offset = fd.pos - line.length
-      dir = line[(0..1)]
-      oend = offset
-      File.write(
-        "#{options[:index]}/#{dir}/#{prev}",
-        "s: #{ostart}\ne: #{oend}"
-      )
-      ostart = offset
-    end
+    next if line.start_with?(prev)
 
+    offset = fd.pos - line.length
+    dir = line[(0..1)]
+    oend = offset
+    File.write(
+      "#{options[:index]}/#{dir}/#{prev}",
+      "s: #{ostart}\ne: #{oend}"
+    )
+    ostart = offset
     prev = line[(0..3)]
   end
 

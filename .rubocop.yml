@@ -1,0 +1,3 @@
+Style/MixinUsage:
+  Exclude:
+    - pwned-passwords-indexer.rb
