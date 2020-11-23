@@ -9,9 +9,9 @@ options = {
 
 bin = File.basename(PROGRAM_NAME)
 
-op = OptionParser.parse! do |parser|
+op = OptionParser.parse do |parser|
   parser.banner = "Usage: #{bin} --pwn " \
-                  "pwned-passwords-sha1-ordered-by-hash-v4.txt"
+                  "pwned-passwords-sha1-ordered-by-hash-v7.txt"
 
   desc_pwn = "Path to pwned passwords file"
   parser.on("-p", "--pwn pwned-passwords.txt", desc_pwn) do |opt|

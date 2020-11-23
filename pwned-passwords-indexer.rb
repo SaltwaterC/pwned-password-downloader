@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 
+# frozen_string_literal: true
+
 require 'optparse'
 require 'fileutils'
 
@@ -13,7 +15,7 @@ bin = File.basename($PROGRAM_NAME)
 
 op = OptionParser.new do |parser|
   parser.banner = "Usage: #{bin} --pwn " \
-                  'pwned-passwords-sha1-ordered-by-hash-v4.txt'
+                  'pwned-passwords-sha1-ordered-by-hash-v7.txt'
 
   desc_pwn = 'Path to pwned passwords file'
   parser.on('-p', '--pwn pwned-passwords.txt', desc_pwn) do |opt|
@@ -34,17 +36,17 @@ end
 
 begin
   op.parse!
-rescue StandardError => err
-  STDERR.puts("ERROR: #{err}")
-  STDERR.puts
-  STDERR.puts(op)
+rescue StandardError => e
+  warn("ERROR: #{e}")
+  $stderr.puts
+  warn(op)
   exit(1)
 end
 
 if options[:pwn].nil?
-  STDERR.puts('ERROR: must specify the pwned passwords file path. See help.')
-  STDERR.puts
-  STDERR.puts(op)
+  warn('ERROR: must specify the pwned passwords file path. See help.')
+  $stderr.puts
+  warn(op)
   exit(3)
 end
 
