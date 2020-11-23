@@ -39,6 +39,6 @@ e: end_byte
 
 It is a very compact representation and can be parsed as YAML.
 
-Due to overhead, the size of the index is based on the block size of the filesystem. On a 4 kiB block size, the index takes 256 MiB even though the release archive of the index is under 1 MiB. This is the reason the index doesn't have more buckets - the 5th character of the hash increases the bucket number 16 times and it requires 4GB of storage, whereas the performance improvements of the search speed are very minimal.
+Due to overhead, the size of the index is based on the block size of the filesystem. On a 4 kiB block size, the index takes 256 MiB even though the release archive of the index is under 1 MiB. This is the reason the index doesn't have more buckets - the 5th character of the hash increases the bucket number 16 times and it requires 4GiB of storage, whereas the performance improvements of the search speed are very minimal.
 
 As an example, for HIBP v4.7 which has over 551 million passwords and it's 23 GiB in size, the search space is reduced to around 8400 hashes which can be searched in a reasonable time even with an O(n) algorithm.
