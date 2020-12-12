@@ -60,8 +60,10 @@ unless Dir.exists?(options[:index])
 end
 
 File.open(options[:pwn]) do |fd|
-  prev = "0000"
-  ostart = 0
+  prev = fd.read_string(4)
+  dir = prev[(0..1)]
+  fd.rewind
+  ostart = fd.pos
 
   fd.each_line do |line|
     next if line.starts_with?(prev)
@@ -77,5 +79,5 @@ File.open(options[:pwn]) do |fd|
     prev = line[(0..3)]
   end
 
-  File.write("#{options[:index]}/FF/FFFF", "s: #{ostart}\ne: #{fd.pos}")
+  File.write("#{options[:index]}/#{dir}/#{prev}", "s: #{ostart}\ne: #{fd.pos}")
 end
