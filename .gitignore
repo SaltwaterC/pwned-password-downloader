@@ -1,4 +1,6 @@
 *.dwarf
 *.tar.bz2
 pwned-passwords-indexer
+pwned-passwords-downloader
 idx/
+lib/

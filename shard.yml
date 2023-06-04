@@ -1,0 +1,8 @@
+name: pwned-password-tools
+version: 10.0.0
+
+dependencies:
+  crystal-wait-group:
+    github: jasonrobot/crystal-wait-group
+  mt_helpers:
+    github: NeuraLegion/mt_helpers

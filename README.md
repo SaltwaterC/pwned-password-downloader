@@ -1,5 +1,26 @@
 # pwned-passwords-tools
 
+- pwned-passowrds-downloader - cross-platform alternative to official tool that doesn't require a runtime.
+- pwned-passwords-indexer - used by the old archived pwned-password.txt lists that used to be available.
+
+## pwned-passwords-downloader
+
+Work in progress! Read: buggy, particularly concurrent code.
+
+Cross-platform alternative to official [PwnedPasswordsDownloader](https://github.com/HaveIBeenPwned/PwnedPasswordsDownloader). While .NET Core runtime is available on more platforms these days, this allows the binaries to run without any particular runtime.
+
+While it implements a parallelism option, it may not work exactly the same as the official `PwnedPasswordsDownloader`. This sets the number of fibers (coroutines) to run concurrently. The binary must be built with `preview_mt` to enable Crystal runtime's parallelism support and the default numbers of system theads (forks really) is set as 4, unless overriden via `CRYSTAL_WORKERS` environment variable. While fibers by themselves may get some benefit without threading while waiting for IO, it won't get the full performance benefit without an appropriate number of threads.
+
+Supports additional features not available in the official downloader:
+
+ * Saves range ETags to make it easier to verify whether a range file requires update. WIP i.e going to be an optional, ETag checking not yet implemented.
+ * Saves a single specified range in the output directory. Useful if a range fails to download.
+ * Basic integrity checks i.e whether all files have been downloaded and their length is non-zero.
+ * TODO: option to strip CRLF to keep LF only (UNIX line termination) - shaves off about 550MiB of disk
+ * TODO: option to strip counters - shaves off about 1.1 GiB of disk
+
+## pwned-passwords-indexer
+
 These are a set of tools created to speed up the search in large files such as the [Have I Been Pwned downloadable passwords list](https://haveibeenpwned.com/Passwords).
 
 While the tooling has been created for the HIBP files, it is possible to use them for any password file that has the following specifications:
@@ -7,17 +28,15 @@ While the tooling has been created for the HIBP files, it is possible to use the
  * the hashes are sorted
  * the hashes are in upper case hex string format
 
-The hashes don't have to be SHA1.
-
-## pwned-passwords-indexer
+The hashes don't have to be SHA1. While this was not planned, it also supports NTLM hashes as the indexer only reads hash prefixes to determine the ranges.
 
 **Purpose:** offline password auditing.
 
 **Advantages:** the index may be generated in a reasonable time and the original pwned password files may be used.
 
-**Disadvantages:** the index uses extra disk space. It is not the fastest way to search such a large data set.
+**Disadvantages:** the index uses extra disk space. It is not the fastest way to search such a large data set. The hash list must be downloaded using `pwned-passwords-downloader` (this repo) or `PwnedPasswordsDownloader` (official tool) which negates any advantages previously offered by the archived list which are not available anymore. While the tooling isn't deprecated, it is a bit of a useless effort to merge all ranges returned by the API only to compute the ranges for offline use.
 
-There are no versioned releases for the tool. Basically the only artefact which has a version is the index archive itself having the same version as the HIBP password list.
+There are no versioned releases for the tool. Basically the only available version used to index the HIBP pwned-passwords.txt file should work for any version.
 
 To run the macOS Crystal binary you'll need these runtime dependencies:
 
@@ -40,5 +59,3 @@ e: end_byte
 It is a very compact representation and can be parsed as YAML.
 
 Due to overhead, the size of the index is based on the block size of the filesystem. On a 4 kiB block size, the index takes 256 MiB even though the release archive of the index is under 1 MiB. This is the reason the index doesn't have more buckets - the 5th character of the hash increases the bucket number 16 times and it requires 4GiB of storage, whereas the performance improvements of the search speed are very minimal.
-
-As an example, for HIBP v4.7 which has over 551 million passwords and it's 23 GiB in size, the search space is reduced to around 8400 hashes which can be searched in a reasonable time even with an O(n) algorithm.
