@@ -1,6 +1,0 @@
-AllCops:
-  NewCops: enable
-
-Style/MixinUsage:
-  Exclude:
-    - pwned-passwords-indexer.rb
