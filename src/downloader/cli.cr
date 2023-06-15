@@ -11,9 +11,8 @@ class DownloaderCLI
   @options : DownloaderOptions
   @count = 1048575
 
-  def initialize(options, version : String)
+  def initialize(options)
     @options = options
-    @version = version
     @output_directory = File.expand_path(@options.output_directory)
     # the default data structures aren't concurrency safe
     @ranges = Synchronized(Array(Int64)).new
@@ -109,7 +108,7 @@ class DownloaderCLI
   def download(client, range)
     rhex = range_hex(range)
     headers = HTTP::Headers.new
-    headers["user-agent"] = "pwned-password-downloader/#{@version}"
+    headers["user-agent"] = "pwned-password-downloader/#{@options.version}"
     headers["if-none-match"] = @etags[range] if @have_etags
     response = client.get("/range/#{rhex}", headers)
     if response.status_code == 200

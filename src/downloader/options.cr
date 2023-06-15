@@ -1,9 +1,10 @@
 require "option_parser"
 
 class DownloaderOptions
-  getter :output_directory, :parallelism, :check, :range, :no_etags
+  getter :version, :output_directory, :parallelism, :check, :range, :no_etags
 
-  def initialize(bin_path)
+  def initialize(bin_path, version : String)
+    @version = version
     @output_directory = "pwnedpasswords"
     @parallelism = System.cpu_count.as(Int64) * 8
     @check = false
@@ -21,10 +22,12 @@ class DownloaderOptions
 
   def parser_options
     help_option
+    version_option
     output_option
     parallelism_option
     range_option
     check_option
+    no_etags_option
   end
 
   def error_handlers
@@ -46,6 +49,13 @@ class DownloaderOptions
   def help_option
     @parser.on("-h", "--help", "Show this help") do
       puts(@parser)
+      exit(0)
+    end
+  end
+
+  def version_option
+    @parser.on("-v", "--version", "Print version number") do
+      puts @version
       exit(0)
     end
   end
@@ -92,7 +102,7 @@ class DownloaderOptions
 
   def no_etags_option
     desc_no_etags = "Disable checking the ETags while downloading the ranges. Effectively, " \
-                    "downloads everything from scratch"
+                    "downloads everything from scratch. Does not update ETag list/save ETag file."
     @parser.on("-n", "--no-etags", desc_no_etags) do
       @no_etags = true
     end

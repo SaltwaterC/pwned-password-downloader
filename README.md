@@ -15,3 +15,25 @@ Supports additional features not available in the official downloader:
  * TODO: option to strip counters - shaves off about 1.1 GiB of disk space
 
 Missing feature from official downloader: single file mode. The single file mode is difficult to work with due to sheer size so it is rather useless by itself without either splitting the file or indexing the file. Both options (splitting and indexing) are time consuming and by default (this tool) or as an option (official downloader) gets the ranges as separate files anyway which are easy to query. Considering that there's no single archive to speed up the download as any tool would still need to send 1048576 requests to api.pwnedpasswords.com to get the ranges, this feature is rather useless by itself.
+
+## Usage
+
+```bash
+# print help
+./pwned-password-downloader -h
+Usage: pwned-password-downloader
+    -h, --help                       Show this help
+    -d, --output-directory pwnedpasswords
+                                     Output directory. Defaults to pwnedpasswords
+    -p, --parallelism 128            The number of parallel requests to make to Have I Been Pwned to download the hash ranges. If omitted or less than two, defaults to eight times the number of processors on the machine (128).
+    -r, --range 5HEXCHARS            A single range to download in the output directory pwnedpasswords. Useful to recover when some ranges may fail the request.
+    -c, --check                      Check whether all ranges have been downloaded and whether their file size is > 0
+    -n, --no-etags                   Disable checking the ETags while downloading the ranges. Effectively, downloads everything from scratch. Does not update ETag list/save ETag file.
+
+./pwned-password-downloader # 1st invoke - downloads everything in pwnedpasswords
+# beef up number of worker threads
+CRYSTAL_WORKERS=16 ./pwned-password-downloader # 2nd invoke - send requests with ETag values and updates changed ranges
+./pwned-password-downloader -c # invoke checks
+./pwned-password-downloader -n # ignores ETags and overwrites all files if found
+./pwned-password-downloader -r 00000 # downloads single range
+```
