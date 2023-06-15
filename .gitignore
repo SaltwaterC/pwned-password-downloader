@@ -1,4 +1,5 @@
 *.dwarf
 pwned-password-downloader
+pwned-password-downloader-*
 lib/
 bin/
