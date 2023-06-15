@@ -1,7 +1,7 @@
 require "option_parser"
 
 class DownloaderOptions
-  getter :output_directory, :parallelism, :check, :range
+  getter :output_directory, :parallelism, :check, :range, :no_etags
 
   def initialize(bin_path)
     @output_directory = "pwnedpasswords"
@@ -9,6 +9,7 @@ class DownloaderOptions
     @check = false
     @single = false
     @range = "" # avoid the ache of nilable types
+    @no_etags = false
 
     bin = File.basename(bin_path)
     @parser = OptionParser.new
@@ -72,6 +73,7 @@ class DownloaderOptions
     @parser.on("-r", "--range 5HEXCHARS", desc_range) do |opt|
       if opt.size == 5 && /^[0-9A-F]{5}$/.match(opt)
         @range = opt
+        @no_etags = true
       else
         STDERR.puts("ERROR: expecting exactly 5 HEX upper case characters as range")
         STDERR.puts
@@ -84,6 +86,15 @@ class DownloaderOptions
     desc_check = "Check whether all ranges have been downloaded and whether their file size is > 0"
     @parser.on("-c", "--check", desc_check) do
       @check = true
+      @no_etags = true
+    end
+  end
+
+  def no_etags_option
+    desc_no_etags = "Disable checking the ETags while downloading the ranges. Effectively, " \
+                    "downloads everything from scratch"
+    @parser.on("-n", "--no-etags", desc_no_etags) do
+      @no_etags = true
     end
   end
 end

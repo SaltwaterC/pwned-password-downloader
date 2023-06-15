@@ -1,23 +1,25 @@
 .PHONY : all
 
-all: downloader indexer
+all: downloader-release
 
 downloader-dev:
-	crystal build --define preview_mt pwned-passwords-downloader.cr
+	crystal build --define preview_mt pwned-password-downloader.cr
 
 downloader:
-	crystal build --define preview_mt --release pwned-passwords-downloader.cr
+	crystal build --define preview_mt --release pwned-password-downloader.cr
 
-indexer:
-	crystal build --release pwned-passwords-indexer.cr
+downloader-static:
+	crystal build --define preview_mt --release --static pwned-password-downloader.cr
+
+downloader-release:
+	docker build -v `pwd`:/build .
+	$(MAKE) strip
 
 strip:
-	if [ -f pwned-passwords-downloader ]; then strip --strip-unneeded pwned-passwords-downloader; fi
-	if [ -f pwned-passwords-indexer ]; then strip --strip-unneeded pwned-passwords-indexer; fi
+	if [ -f pwned-password-downloader ]; then strip --strip-unneeded pwned-password-downloader; fi
 
 format:
 	crystal tool format
 
 clean:
-	rm -f pwned-passwords-downloader pwned-passwords-downloader.dwarf
-	rm -f pwned-passwords-indexer pwned-passwords-indexer.dwarf
+	rm -f pwned-password-downloader pwned-password-downloader.dwarf

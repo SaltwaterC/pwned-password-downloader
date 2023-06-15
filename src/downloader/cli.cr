@@ -1,6 +1,8 @@
+require "json"
 require "file_utils"
 require "mt_helpers"
 require "http/client"
+require "http/headers"
 require "crystal-wait-group"
 
 require "./options"
@@ -9,12 +11,21 @@ class DownloaderCLI
   @options : DownloaderOptions
   @count = 1048575
 
-  def initialize(options)
+  def initialize(options, version : String)
     @options = options
-    @output_directory = "#{Dir.current}/#{@options.output_directory}"
+    @version = version
+    @output_directory = File.expand_path(@options.output_directory)
     # the default data structures aren't concurrency safe
     @ranges = Synchronized(Array(Int64)).new
     @stats = Synchronized(Hash(Int64, Int64)).new
+    @etags = Synchronized(Array(String)).new
+    @have_etags = false
+
+    @etags_file = "#{@output_directory}/_etags.json"
+    if File.exists?(@etags_file) && !@options.no_etags
+      @etags = Synchronized(Array(String)).new(Array(String).from_json(File.read(@etags_file)))
+      @have_etags = true
+    end
   end
 
   def start
@@ -26,8 +37,9 @@ class DownloaderCLI
   def range_downloader
     download_dir
 
+    @have_etags = false
     client = api_client
-    download(client, @options.range)
+    download(client, range_unhex(@options.range))
     client.close
     puts "Fetched: #{@options.output_directory}/#{@options.range}.txt"
 
@@ -35,9 +47,9 @@ class DownloaderCLI
   end
 
   # it isn't worth the effort to make this concurrent
-  # while it can shave off some execution time from 1.3 down to 0.5 on reasonably fast hardware
-  # there's a race condition that makes this unreliable and most fibers get 0 processed checks because
-  # the checks are stupid fast
+  # while it can shave off some execution time  there's a race condition that makes
+  # this unreliable and most fibers get 0 processed checks because the checks are
+  # stupid fast
   def check_downloader
     checked = 0
     iter = 0
@@ -66,6 +78,7 @@ class DownloaderCLI
     download_dir
     create_ranges
     create_workers
+    write_etags
     print_stats
   end
 
@@ -81,6 +94,10 @@ class DownloaderCLI
     range.to_s(16, upcase: true).rjust(5, '0')
   end
 
+  def range_unhex(range)
+    range.to_i(16)
+  end
+
   def create_ranges
     range_count = @count
     while range_count >= 0
@@ -89,14 +106,20 @@ class DownloaderCLI
     end
   end
 
-  def download(client, range_hex)
-    response = client.get("/range/#{range_hex}")
+  def download(client, range)
+    rhex = range_hex(range)
+    headers = HTTP::Headers.new
+    headers["user-agent"] = "pwned-password-downloader/#{@version}"
+    headers["if-none-match"] = @etags[range] if @have_etags
+    response = client.get("/range/#{rhex}", headers)
     if response.status_code == 200
-      File.write("#{@output_directory}/#{range_hex}.txt", response.body)
-      File.write("#{@output_directory}/#{range_hex}.etag", response.headers["etag"])
+      File.write("#{@output_directory}/#{rhex}.txt", response.body)
+      @etags[range] = response.headers["etag"] if @have_etags
       return 1
+    elsif response.status_code == 304 && @have_etags
+      return 0 # already downloaded
     else
-      STDERR.puts "ERROR: range #{range_hex} failed to download with status code #{response.status_code}"
+      STDERR.puts "ERROR: range #{rhex} failed to download with status code #{response.status_code}"
       return 0
     end
   end
@@ -108,7 +131,7 @@ class DownloaderCLI
     downloaded = 0
     loop do
       if @ranges.size > 0
-        downloaded += download(client, range_hex(@ranges.pop))
+        downloaded += download(client, @ranges.pop)
       else
         @stats[fid] = downloaded
         break
@@ -124,6 +147,12 @@ class DownloaderCLI
       end
     end
     wg.wait
+  end
+
+  def write_etags
+    return unless @have_etags
+
+    File.write(@etags_file, @etags.to_json)
   end
 
   def print_stats

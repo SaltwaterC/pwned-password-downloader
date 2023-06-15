@@ -1,6 +1,4 @@
-# pwned-passwords-downloader
-
-Work in progress!
+# pwned-password-downloader
 
 Cross-platform alternative to official [PwnedPasswordsDownloader](https://github.com/HaveIBeenPwned/PwnedPasswordsDownloader). While .NET Core runtime is available on more platforms these days, this allows the binaries to run without any particular runtime.
 
@@ -10,7 +8,7 @@ The responses from api.pwnedpasswors.com are gzip compressed and transparently d
 
 Supports additional features not available in the official downloader:
 
- * Saves range ETags to make it easier to verify whether a range file requires update. WIP i.e going to be an optional, ETag checking not yet implemented, lots of wasted disk space due to overhead (will be implemented as SQLite DB).
+ * Saves range ETags to make it easier to verify whether a range file requires update.
  * Saves a single specified range in the output directory. Useful if a range fails to download.
  * Basic integrity checks i.e whether all files have been downloaded and their length is non-zero.
  * TODO: option to strip CRLF to keep LF only (UNIX line termination) - shaves off about 0.5 GiB of disk space
