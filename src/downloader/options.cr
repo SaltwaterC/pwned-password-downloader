@@ -73,7 +73,6 @@ class DownloaderOptions
                        "the hash ranges. If omitted or less than two, defaults to eight times the " \
                        "number of processors on the machine (#{@parallelism})."
     @parser.on("-p", "--parallelism #{@parallelism}", desc_parallelism) do |opt|
-      parallelism = opt.to_i64
       parallelism = opt.to_i32
       @parallelism = parallelism if parallelism >= 2
     end
