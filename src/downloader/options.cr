@@ -3,10 +3,11 @@ require "option_parser"
 class DownloaderOptions
   getter :version, :output_directory, :parallelism, :check, :range, :no_etags
 
+  @parallelism : Int32 = System.cpu_count.to_i32 * 8.to_i32
+
   def initialize(bin_path, version : String)
     @version = version
     @output_directory = "pwnedpasswords"
-    @parallelism = System.cpu_count.as(Int64) * 8
     @check = false
     @single = false
     @range = "" # avoid the ache of nilable types
@@ -73,6 +74,7 @@ class DownloaderOptions
                        "number of processors on the machine (#{@parallelism})."
     @parser.on("-p", "--parallelism #{@parallelism}", desc_parallelism) do |opt|
       parallelism = opt.to_i64
+      parallelism = opt.to_i32
       @parallelism = parallelism if parallelism >= 2
     end
   end

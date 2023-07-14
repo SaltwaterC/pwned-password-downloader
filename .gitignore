@@ -1,5 +1,9 @@
 *.dwarf
+.shards
 pwned-password-downloader
 pwned-password-downloader-*
+pwned-password-downloader.exe
+pwned-password-downloader.pdb
 lib/
 bin/
+pwnedpasswords/

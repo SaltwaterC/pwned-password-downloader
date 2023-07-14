@@ -16,6 +16,18 @@ Supports additional features not available in the official downloader:
 
 Missing feature from official downloader: single file mode. The single file mode is difficult to work with due to sheer size so it is rather useless by itself without either splitting the file or indexing the file. Both options (splitting and indexing) are time consuming and by default (this tool) or as an option (official downloader) gets the ranges as separate files anyway which are easy to query. Considering that there's no single archive to speed up the download as any tool would still need to send 1048576 requests to api.pwnedpasswords.com to get the ranges, this feature is rather useless by itself.
 
+## Windows build
+
+The Windows build doesn't use preview_mt as the implementation is not complete, so the process crashes. This is accurate as of Crystal 1.9.0. Therefore, the Windows build has only concurrency, but not parallelism support. In practice, it maximises a single (physical) CPU core which reduces it performance even compared to running the Linux binary under WSL2. Also, Microsoft Defender Real-time protection needs to be turned off, otherwise most of the CPU time is spent analysing the download ranges, which further limits the performance. All in, with AV off, it adds up to 5 minutes to the download time, but your mileage may vary, particularly on the available CPU and networking.
+
+Checking with `--check` is orders of magniture slower than the Linux build. We're talking minutes compared to under 2 seconds under WSL2.
+
+The Windows build is built with:
+
+```
+crystal.exe build --release --static .\pwned-password-downloader.cr
+```
+
 ## Usage
 
 ```bash
