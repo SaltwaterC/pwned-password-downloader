@@ -7,3 +7,4 @@ pwned-password-downloader.pdb
 lib/
 bin/
 pwnedpasswords/
+downloader_*

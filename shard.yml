@@ -1,8 +1,8 @@
 name: pwned-password-downloader
-version: 1.0.0
+version: 1.0.2
 authors:
   - Stefan Rusu <saltwaterc@gmail.com>
-crystal: '>= 1.8.2'
+crystal: '>= 1.9.0'
 license: MIT
 description: |
   Have I Been Pwned breached password list downloader
