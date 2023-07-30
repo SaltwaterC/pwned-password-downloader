@@ -1,5 +1,4 @@
-version = "v1.0.2" # keep it in sync with shard.yml unless there's a better way
-
+require "./.gen/version"
 require "./src/downloader/options"
 require "./src/downloader/cli"
 

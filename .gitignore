@@ -4,7 +4,10 @@ pwned-password-downloader
 pwned-password-downloader-*
 pwned-password-downloader.exe
 pwned-password-downloader.pdb
+dev
+dynamic
 lib/
 bin/
 pwnedpasswords/
 downloader_*
+.gen/*

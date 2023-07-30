@@ -1,12 +1,16 @@
-.PHONY : all
+.DEFAULT_GOAL : all
+.PHONY : all release static macos strip format clean
+
+.gen/version.cr: shard.yml
+	crystal run tools/version.cr
 
 all: release
 
-dev:
-	crystal build --define preview_mt pwned-password-downloader.cr
+dev: .gen/version.cr pwned-password-downloader.cr $(shell find src -type f -name "*.cr")
+	crystal build --define preview_mt pwned-password-downloader.cr -o dev
 
-dynamic:
-	crystal build --define preview_mt --release pwned-password-downloader.cr
+dynamic: .gen/version.cr pwned-password-downloader.cr $(shell find src -type f -name "*.cr")
+	crystal build --define preview_mt --release pwned-password-downloader.cr -o dynamic
 
 static:
 	crystal build --define preview_mt --release --static pwned-password-downloader.cr -o pwned-password-downloader-linux-amd64
@@ -35,4 +39,4 @@ format:
 	crystal tool format
 
 clean:
-	rm -f pwned-password-downloader-linux-amd64 pwned-password-downloader.dwarf downloader_x86_64 downloader_x86_64.o downloader_arm64 downloader_arm64.o pwned-password-downloader-darwin-universal
+	rm -f pwned-password-downloader-* pwned-password-downloader-*.dwarf downloader_* downloader_*.o dev dynamic .gen/*
