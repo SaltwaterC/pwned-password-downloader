@@ -17,7 +17,8 @@ class DownloaderCLI
     # the default data structures aren't concurrency safe
     @ranges = Synchronized(Array(Int64)).new
     @stats = Synchronized(Hash(Int64, Int64)).new
-    @etags = Synchronized(Array(String | Nil)).new
+    @etags = Synchronized(Hash(Int64, String)).new
+    @failed = Array(String).new
 
     @type_add = ""
     @type_arg = ""
@@ -28,13 +29,7 @@ class DownloaderCLI
 
     @etags_file = "#{@output_directory}/_etags#{@type_add}.json"
     if !@options.no_etags && File.exists?(@etags_file)
-      @etags = Synchronized(Array(String | Nil)).new(Array(String | Nil).from_json(File.read(@etags_file)))
-
-      if @etags.size != @count + 1
-        STDERR.puts "ERROR: invalid length for ETags file. Remove #{@etags_file} then re-run"
-        STDERR.puts
-        exit(5)
-      end
+      @etags = Synchronized(Hash(Int64, String)).new(Hash(Int64, String).from_json(File.read(@etags_file)))
     end
   end
 
@@ -131,8 +126,7 @@ class DownloaderCLI
     elsif response.status_code == 304
       return 0 # already downloaded
     else
-      @etags[range] = nil unless @options.no_etags # avoid ETags array length issues
-      STDERR.puts "ERROR: range #{rhex} failed to download with status code #{response.status_code}"
+      @failed << "#{rhex} failed to download with status code #{response.status_code}"
       return 0
     end
   end
@@ -144,6 +138,7 @@ class DownloaderCLI
     downloaded = 0
     loop do
       if @ranges.size > 0
+        print "\rProgress: #{(((@count - @ranges.size) / @count) * 100).format(decimal_places: 3)}%"
         downloaded += download(client, @ranges.pop)
       else
         @stats[fid] = downloaded
@@ -162,6 +157,8 @@ class DownloaderCLI
       end
     end
     wg.wait
+
+    puts
   end
 
   def write_etags
@@ -176,5 +173,9 @@ class DownloaderCLI
       total_downloads += downloads
     end
     puts "Total successful downloads: #{total_downloads}"
+
+    if @failed.size > 0
+      puts "Failures:\n\n#{@failed.join("\n")}"
+    end
   end
 end

@@ -27,7 +27,7 @@ Usage: pwned-password-downloader
     -h, --help                       Show this help
     -d, --output-directory pwnedpasswords
                                      Output directory. Defaults to pwnedpasswords
-    -p, --parallelism 128            The number of parallel requests to make to Have I Been Pwned to download the hash ranges. If omitted or less than two, defaults to eight times the number of processors on the machine (128).
+    -p, --parallelism 128            The number of parallel requests to make to Have I Been Pwned to download the hash ranges. Defaults to eight times the number of processors on the machine (128).
     -r, --range 5HEXCHARS            A single range to download in the output directory pwnedpasswords. Useful to recover when some ranges may fail the request.
     -c, --check                      Check whether all ranges have been downloaded and whether their file size is > 0
     -n, --no-etags                   Disable checking the ETags while downloading the ranges. Effectively, downloads everything from scratch. Does not update ETag list/save ETag file.
@@ -40,3 +40,5 @@ CRYSTAL_WORKERS=16 ./pwned-password-downloader # 2nd invoke - send requests with
 ./pwned-password-downloader -n # ignores ETags and overwrites all files if found
 ./pwned-password-downloader -r 00000 # downloads single range
 ```
+
+Note: to avoid naming conflicts, the NTLM hashes use `${RANGE}.ntlm.txt` file names rather than `${RANGE}.txt` in the target download directory. This is not compatible with the official downloader.
