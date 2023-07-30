@@ -1,10 +1,10 @@
 .DEFAULT_GOAL : all
 .PHONY : all release static macos strip format clean
 
+all: release
+
 .gen/version.cr: shard.yml
 	crystal run tools/version.cr
-
-all: release
 
 dev: .gen/version.cr pwned-password-downloader.cr $(shell find src -type f -name "*.cr")
 	crystal build --define preview_mt pwned-password-downloader.cr -o dev

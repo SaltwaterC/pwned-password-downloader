@@ -2,6 +2,28 @@
 
 Specific build information about various platforms.
 
+## Linux build
+
+This should be the most stable of all. It also has the best performance.
+
+The static build loses some performance. This seems to be related to the use of musl rather than glibc. This has been made to be easily redistributable.
+
+This is how check behaves against a downloaded list with a couple of files deliberately altered (one empty, one missing):
+
+```bash
+./pwned-password-downloader-linux-amd64 -d ~/.pwn -c # static release build
+ERROR: ~/.pwn/E00B2.txt is empty
+ERROR: ~/.pwn/F00A1.txt is missing
+Total successful checks: 1048574
+./pwned-password-downloader-linux-amd64 -d ~/.pwn -c  0.35s user 1.14s system 56% cpu 2.632 total
+
+time ./dynamic -d ~/.pwn -c # dynamically linked against glibc et all, built with --release
+ERROR: ~/.pwn/E00B2.txt is empty
+ERROR: ~/.pwn/F00A1.txt is missing
+Total successful checks: 1048574
+./dynamic -d ~/.pwn -c  0.17s user 1.13s system 108% cpu 1.190 total
+```
+
 ## Windows build
 
 The Windows build doesn't use preview_mt as the implementation is not complete, so the process crashes. This is accurate as of Crystal 1.9.0. Therefore, the Windows build has only concurrency, but not parallelism support. In practice, it maximises a single (physical) CPU core which reduces it performance even compared to running the Linux binary under WSL2. Also, Microsoft Defender Real-time protection needs to be turned off, otherwise most of the CPU time is spent analysing the download ranges, which further limits the performance. All in, with AV off, it adds up to 5 minutes to the download time, but your mileage may vary, particularly on the available CPU and networking.

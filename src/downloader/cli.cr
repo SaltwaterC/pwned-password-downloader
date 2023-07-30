@@ -28,8 +28,8 @@ class DownloaderCLI
   end
 
   def start
-    range_downloader if @options.range.size == 5
-    check_downloader if @options.check
+    return range_downloader if @options.range.size == 5
+    return check_downloader if @options.check
     main_downloader
   end
 
@@ -41,8 +41,6 @@ class DownloaderCLI
     download(client, range_unhex(@options.range))
     client.close
     puts "Fetched: #{@options.output_directory}/#{@options.range}.txt"
-
-    exit(0)
   end
 
   # it isn't worth the effort to make this concurrent
@@ -67,10 +65,8 @@ class DownloaderCLI
       end
       iter += 1
     end
-    checked
 
     puts "Total successful checks: #{checked}"
-    exit(0)
   end
 
   def main_downloader
