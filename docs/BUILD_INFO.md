@@ -57,7 +57,7 @@ cd /opt && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --st
 
 This makes the desired libraries available at `/opt/armbrew/lib`.
 
-This setup is supported by the `downloader-macos` make target. It produces the expected outcome:
+This setup is supported by the `macos` make target. It produces the expected outcome:
 
 ```bash
 file pwned-password-downloader-darwin-universal
@@ -72,3 +72,5 @@ pwned-password-downloader-darwin-universal:
 	/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
 	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1311.0.0)
 ```
+
+Note: OpenSSL is statically linked.
