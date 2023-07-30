@@ -1,5 +1,5 @@
-require "./lib/options"
-require "./lib/cli"
+require "./libs/options"
+require "./libs/cli"
 
 macro version
   {{ run("./macro/version.cr").stringify }}

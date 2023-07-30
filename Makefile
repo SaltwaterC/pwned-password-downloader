@@ -3,13 +3,13 @@
 
 all: release
 
-dev: $(shell find src -type f -name "*.cr")
-	crystal build --define preview_mt ./src/pwned-password-downloader.cr -o dev
+dev: format $(shell find src -type f -name "*.cr")
+	crystal build --define preview_mt ./src/pwned-password-downloader.cr -o $@
 
-dynamic: $(shell find src -type f -name "*.cr")
-	crystal build --define preview_mt --release ./src/pwned-password-downloader.cr -o dynamic
+dynamic: format $(shell find src -type f -name "*.cr")
+	crystal build --define preview_mt --release ./src/pwned-password-downloader.cr -o $@
 
-static:
+static: format
 	crystal build --define preview_mt --release --static ./src/pwned-password-downloader.cr -o pwned-password-downloader-linux-amd64
 
 pwned-password-downloader-linux-amd64: $(shell find src -type f -name "*.cr")
@@ -21,7 +21,7 @@ release: pwned-password-downloader-linux-amd64
 # https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary
 # https://crystal-lang.org/reference/1.9/syntax_and_semantics/cross-compilation.html
 
-macos-arch: $(shell find src -type f -name "*.cr")
+macos-arch: format $(shell find src -type f -name "*.cr")
 	crystal build --define preview_mt --release --cross-compile --target $(ARCH)-apple-macos11 -o downloader_$(ARCH) ./src/pwned-password-downloader.cr
 	$(CC) -target $(ARCH)-apple-macos11 downloader_$(ARCH).o -o downloader_$(ARCH) -rdynamic \
 	-L/opt/crystal/embedded/lib -lz -lpcre -lgc -levent_pthreads -levent -liconv \

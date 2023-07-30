@@ -31,6 +31,7 @@ Usage: pwned-password-downloader
     -r, --range 5HEXCHARS            A single range to download in the output directory pwnedpasswords. Useful to recover when some ranges may fail the request.
     -c, --check                      Check whether all ranges have been downloaded and whether their file size is > 0
     -n, --no-etags                   Disable checking the ETags while downloading the ranges. Effectively, downloads everything from scratch. Does not update ETag list/save ETag file.
+    -t, --type sha1                  Specify the hash type to download. One of: sha1, ntlm
 
 ./pwned-password-downloader # 1st invoke - downloads everything in pwnedpasswords
 # beef up number of worker threads
