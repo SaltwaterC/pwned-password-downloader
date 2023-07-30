@@ -33,7 +33,7 @@ Checking with `--check` is orders of magniture slower than the Linux build. We'r
 The Windows build is built with:
 
 ```
-crystal.exe build --release --static .\pwned-password-downloader.cr
+crystal.exe build --release --static .\src\pwned-password-downloader.cr
 ```
 
 ## macOS build
