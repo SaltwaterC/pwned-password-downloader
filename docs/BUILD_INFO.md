@@ -17,7 +17,7 @@ ERROR: ~/.pwn/F00A1.txt is missing
 Total successful checks: 1048574
 ./pwned-password-downloader-linux-amd64 -d ~/.pwn -c  0.35s user 1.14s system 56% cpu 2.632 total
 
-time ./dynamic -d ~/.pwn -c # dynamically linked against glibc et all, built with --release
+time ./dynamic -d ~/.pwn -c # dynamically linked against glibc et al, built with --release
 ERROR: ~/.pwn/E00B2.txt is empty
 ERROR: ~/.pwn/F00A1.txt is missing
 Total successful checks: 1048574
