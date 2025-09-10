@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+FORMULA_TOKEN="${1}"
+DEST_DIR="build/${FORMULA_TOKEN}"
+export GHCR_TOKEN="QQ=="
+
+JQ=${JQ:-jq}
+
+# --- Helpers ---------------------------------------------------------------
+
+die() { echo "error: $*" >&2; exit 1; }
+
+has_cmd() { command -v "$1" >/dev/null 2>&1; }
+
+need() {
+  for c in "$@"; do
+    has_cmd "$c" || die "missing required command: $c"
+  done
+}
+
+sha256_file() {
+  if has_cmd shasum; then shasum -a 256 "$1" | awk '{print $1}'; 
+  elif has_cmd sha256sum; then sha256sum "$1" | awk '{print $1}';
+  else die "need shasum or sha256sum"; fi
+}
+
+# Add somewhere near your platform detection:
+
+codename() {
+  case "$1" in
+    11) echo big_sur ;;
+    12) echo monterey ;;
+    13) echo ventura ;;
+    14) echo sonoma ;;
+    15) echo sequoia ;;
+    *) echo "unsupported macOS major: $1" >&2; exit 1;;
+  esac
+}
+
+# Allow forcing via env; otherwise detect:
+ARCH="${ARCH:-$(uname -m)}"                               # allow: ARCH=arm64 or ARCH=x86_64
+MACOS_MAJOR="${MACOS_MAJOR:-$(sw_vers -productVersion | cut -d. -f1)}"  # allow: MACOS_MAJOR=14/15
+BOTTLE_KEY=$(
+  if [ "$ARCH" = "arm64" ]; then
+    echo "arm64_$(codename "$MACOS_MAJOR")"
+  else
+    echo "$(codename "$MACOS_MAJOR")"
+  fi
+)
+
+echo "Info: arch=$ARCH macOS=$(codename "$MACOS_MAJOR") bottle_key=$BOTTLE_KEY"
+
+api_get() {  # GET with curl (no auth)
+  curl -fsSL "$1"
+}
+
+ghcr_get() { # GET from GHCR with optional auth & Accept for blob
+  if [[ -n "${GHCR_TOKEN:-}" ]]; then
+    curl -fsSL -H "Authorization: Bearer ${GHCR_TOKEN}" \
+         -H "Accept: application/vnd.oci.image.layer.v1.tar+gzip" \
+         "$1"
+  else
+    curl -fsSL -H "Accept: application/vnd.oci.image.layer.v1.tar+gzip" \
+         "$1"
+  fi
+}
+
+resolve_formula() {
+  local token="$1"
+  # Try direct hit first; if 404, use the index to resolve aliases/oldnames
+  if api_get "https://formulae.brew.sh/api/formula/${token}.json" >/dev/null 2>&1; then
+    echo "$token"; return 0
+  fi
+
+  local resolved
+  resolved="$(
+    api_get "https://formulae.brew.sh/api/formula.json" | $JQ -r --arg t "$token" '
+      ( .[] | select(.name == $t) | .name ) //
+      ( .[] | select(.aliases | index($t)) | .name ) //
+      ( .[] | select(.oldnames | index($t)) | .name ) //
+      empty
+    ' | head -n1
+  )"
+  [[ -n "$resolved" ]] || die "unable to resolve formula token: $token"
+  echo "$resolved"
+}
+
+# --- Main ------------------------------------------------------------------
+
+need curl "$JQ" tar uname sw_vers
+
+FORMULA_NAME="$(resolve_formula "$FORMULA_TOKEN")"
+echo "Resolved formula: $FORMULA_TOKEN -> $FORMULA_NAME"
+
+FORMULA_JSON="$(api_get "https://formulae.brew.sh/api/formula/${FORMULA_NAME}.json")"
+
+# Extract useful fields
+VERSION="$(echo "$FORMULA_JSON" | $JQ -r '.versions.stable')"
+URL="$(echo "$FORMULA_JSON" | $JQ -r --arg k "$BOTTLE_KEY" '.bottle.stable.files[$k].url // empty')"
+SHA256_EXPECTED="$(echo "$FORMULA_JSON" | $JQ -r --arg k "$BOTTLE_KEY" '.bottle.stable.files[$k].sha256 // empty')"
+
+[[ -n "$URL" && -n "$SHA256_EXPECTED" ]] || die "no bottle for key '$BOTTLE_KEY' in $FORMULA_NAME"
+
+echo "Bottle version: $VERSION"
+echo "Blob URL: $URL"
+
+# Prepare dirs
+WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/hb.XXXXXX")"
+trap 'rm -rf "$WORKDIR"' EXIT
+
+OUT_BOTTLE="${ARCH}_$(codename "$MACOS_MAJOR")"
+OUT_VENDOR="${DEST_DIR%/}/vendor/bottles/${OUT_BOTTLE}"
+
+if [ -d "$OUT_VENDOR" ]; then
+  echo "Bottle already present at $OUT_VENDOR, skipping download/extract."
+else
+  mkdir -p "$WORKDIR" "$OUT_VENDOR"
+  echo "Downloading blob..."
+  curl -fsSL \
+    -H "Authorization: Bearer QQ==" \
+    -H "Accept: application/vnd.oci.image.layer.v1.tar+gzip" \
+    "$URL" > "$WORKDIR/layer.tgz"
+
+  echo "Verifying SHA256…"
+  SHA256_ACTUAL="$(sha256_file "$WORKDIR/layer.tgz")"
+  if [ "$SHA256_ACTUAL" != "$SHA256_EXPECTED" ]; then
+    echo "checksum mismatch" >&2
+    exit 1
+  fi
+  echo "OK."
+
+  echo "Extracting bottle into: $OUT_VENDOR"
+  tar -xzf "$WORKDIR/layer.tgz" -C "$OUT_VENDOR"
+fi
+
+LINK_PATH="${DEST_DIR%/}/${ARCH}"
+mkdir -p "${LINK_PATH}"
+cd "${LINK_PATH}"
+ln -sfn "../vendor/bottles/${OUT_BOTTLE}/${FORMULA_NAME}/${VERSION}" root
+cd -

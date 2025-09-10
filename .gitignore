@@ -11,3 +11,4 @@ bin/
 pwnedpasswords/
 downloader_*
 .gen/*
+build/*
