@@ -4,7 +4,7 @@ crystal_version=1.17.1
 
 all: linux
 
-dev: format $(shell find src -type f -name "*.cr") shards
+dev: format $(shell find src -type f -name "*.cr")
 	crystal build --define preview_mt ./src/pwned-password-downloader.cr -o $@
 
 dynamic: format $(shell find src -type f -name "*.cr") shards

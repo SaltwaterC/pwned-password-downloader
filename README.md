@@ -11,7 +11,7 @@ Supports additional features not available in the official downloader:
  * Saves range ETags to make it easier to verify whether a range file requires update.
  * Saves a single specified range in the output directory. Useful if a range fails to download.
  * Basic integrity checks i.e whether all files have been downloaded and their length is non-zero.
- * TODO: option to strip CRLF to keep LF only (UNIX line termination) - shaves off about 0.5 GiB of disk space
+ * Option to strip CRLF to keep LF only (UNIX line termination) - shaves off about 0.5 GiB of disk space
  * TODO: option to strip counters - shaves off about 1.1 GiB of disk space
 
 Missing feature from official downloader: single file mode. The single file mode is difficult to work with due to sheer size so it is rather useless by itself without either splitting the file or indexing the file. Both options (splitting and indexing) are time consuming and by default (this tool) or as an option (official downloader) gets the ranges as separate files anyway which are easy to query. Considering that there's no single archive to speed up the download as any tool would still need to send 1048576 requests to api.pwnedpasswords.com to get the ranges, this feature is rather useless by itself.

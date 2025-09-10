@@ -106,6 +106,10 @@ class DownloaderCLI
     end
   end
 
+  def set_etag(range, response)
+    @etags[range] = response.headers["etag"] unless @options.no_etags
+  end
+
   def download(client, range)
     rhex = range_hex(range)
     headers = HTTP::Headers.new
@@ -120,8 +124,14 @@ class DownloaderCLI
 
     response = client.get("/range/#{rhex}#{@type_arg}", headers)
     if response.status_code == 200
+      if @options.strip
+        File.write("#{@output_directory}/#{rhex}#{@type_add}.txt", response.body.gsub("\r", ""))
+        set_etag(range, response)
+        return 1
+      end
+
       File.write("#{@output_directory}/#{rhex}#{@type_add}.txt", response.body)
-      @etags[range] = response.headers["etag"] unless @options.no_etags
+      set_etag(range, response)
       return 1
     elsif response.status_code == 304
       return 0 # already downloaded

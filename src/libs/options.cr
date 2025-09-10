@@ -1,7 +1,7 @@
 require "option_parser"
 
 class DownloaderOptions
-  getter :version, :output_directory, :parallelism, :check, :range, :no_etags, :type
+  getter :version, :output_directory, :parallelism, :check, :range, :no_etags, :type, :strip
 
   @parallelism : Int32 = System.cpu_count.to_i32 * 8.to_i32
 
@@ -13,6 +13,7 @@ class DownloaderOptions
     @range = "" # avoid the ache of nilable types
     @no_etags = false
     @type = "sha1"
+    @strip = false
 
     bin = File.basename(bin_path)
     @parser = OptionParser.new
@@ -31,6 +32,7 @@ class DownloaderOptions
     check_option
     no_etags_option
     type_option
+    strip_option
   end
 
   def error_handlers
@@ -122,6 +124,13 @@ class DownloaderOptions
         STDERR.puts
         exit(3)
       end
+    end
+  end
+
+  def strip_option
+    desc_strip = "Whether to strip CR to leave LF line terminations only"
+    @parser.on("-s", "--strip", desc_strip) do
+      @strip = true
     end
   end
 end
