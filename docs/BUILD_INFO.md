@@ -38,6 +38,10 @@ crystal.exe build --release --static .\src\pwned-password-downloader.cr
 
 ## macOS build
 
+```bash
+brew install crystal jq # crystal_version in Makefile must match this version
+```
+
 The macOS build is a bit more challenging for a few reasons:
 
  * macOS doesn't support fully static builds.
