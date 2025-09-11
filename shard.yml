@@ -12,7 +12,5 @@ targets:
     main: pwned-password-downloader.cr
 
 dependencies:
-  crystal-wait-group:
-    github: jasonrobot/crystal-wait-group
   mt_helpers:
     github: NeuraLegion/mt_helpers

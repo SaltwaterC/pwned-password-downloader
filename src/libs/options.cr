@@ -1,7 +1,7 @@
 require "option_parser"
 
 class DownloaderOptions
-  getter :version, :output_directory, :parallelism, :check, :range, :no_etags, :type, :strip
+  getter :version, :output_directory, :parallelism, :check, :range, :no_etags, :type, :strip, :merge, :merge_file
 
   @parallelism : Int32 = System.cpu_count.to_i32 * 8.to_i32
 
@@ -14,6 +14,8 @@ class DownloaderOptions
     @no_etags = false
     @type = "sha1"
     @strip = ""
+    @merge = false
+    @merge_file = ""
 
     bin = File.basename(bin_path)
     @parser = OptionParser.new
@@ -21,11 +23,12 @@ class DownloaderOptions
     parser_options
     error_handlers
     @parser.parse
+    update_merge_file
   end
 
   def parser_options
-    help_option
     version_option
+    help_option
     output_option
     parallelism_option
     range_option
@@ -33,6 +36,7 @@ class DownloaderOptions
     no_etags_option
     type_option
     strip_option
+    merge_option
   end
 
   def error_handlers
@@ -139,5 +143,17 @@ class DownloaderOptions
         exit(5)
       end
     end
+  end
+
+  def merge_option
+    desc_merge = "Merge all downloaded ranges in a single file. Defaults to pwnedpasswords.TYPE.txt"
+    @parser.on("-m", "--merge [pwnedpasswords.#{@type}.txt]", desc_merge) do |opt|
+      @merge_file = opt if opt.size > 0
+      @merge = true
+    end
+  end
+
+  def update_merge_file
+    @merge_file = "pwnedpasswords.#{@type}.txt" if @merge && @merge_file.size == 0
   end
 end

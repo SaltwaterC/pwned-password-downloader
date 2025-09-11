@@ -1,17 +1,22 @@
 .DEFAULT_GOAL : all
 .PHONY : all release static dynamic dev macos format clean macos-arch linux windows shards
 crystal_version=1.17.1
+# Use a local cache dir so builds work in sandboxed environments
+CRYSTAL_CACHE_DIR := $(PWD)/build/.crystal-cache
 
 all: linux
 
-dev: format $(shell find src -type f -name "*.cr")
-	crystal build --define preview_mt ./src/pwned-password-downloader.cr -o $@
+dev: $(shell find src -type f -name "*.cr")
+	mkdir -p $(CRYSTAL_CACHE_DIR)
+	CRYSTAL_CACHE_DIR=$(CRYSTAL_CACHE_DIR) crystal build --define preview_mt ./src/pwned-password-downloader.cr -o $@
 
 dynamic: format $(shell find src -type f -name "*.cr") shards
-	crystal build --define preview_mt --release ./src/pwned-password-downloader.cr -o $@
+	mkdir -p $(CRYSTAL_CACHE_DIR)
+	CRYSTAL_CACHE_DIR=$(CRYSTAL_CACHE_DIR) crystal build --define preview_mt --release ./src/pwned-password-downloader.cr -o $@
 
 static: format shards
-	crystal build --define preview_mt --release --static ./src/pwned-password-downloader.cr -o pwned-password-downloader-linux-amd64
+	mkdir -p $(CRYSTAL_CACHE_DIR)
+	CRYSTAL_CACHE_DIR=$(CRYSTAL_CACHE_DIR) crystal build --define preview_mt --release --static ./src/pwned-password-downloader.cr -o pwned-password-downloader-linux-amd64
 
 pwned-password-downloader-linux-amd64: $(shell find src -type f -name "*.cr")
 	docker run --rm --volume `pwd`:/build crystallang/crystal:$(crystal_version)-alpine make -C build static

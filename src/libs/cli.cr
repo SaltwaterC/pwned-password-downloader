@@ -1,9 +1,9 @@
 require "json"
 require "file_utils"
 require "mt_helpers"
+require "wait_group"
 require "http/client"
 require "http/headers"
-require "crystal-wait-group"
 
 require "./options"
 
@@ -16,9 +16,9 @@ class DownloaderCLI
     @output_directory = File.expand_path(@options.output_directory)
     # the default data structures aren't concurrency safe
     @ranges = Synchronized(Array(Int64)).new
-    @stats = Synchronized(Hash(Int64, Int64)).new
     @etags = Synchronized(Hash(Int64, String)).new
-    @failed = Array(String).new
+    @failed = Synchronized(Array(String)).new
+    @successful = Atomic(Int64).new(0_i64)
 
     @type_add = ""
     @type_arg = ""
@@ -117,20 +117,20 @@ class DownloaderCLI
   def write_file(range, response, rhex, content)
     File.write("#{@output_directory}/#{rhex}#{@type_add}.txt", content)
     set_etag(range, response)
+    @successful.add(1)
     return 1
   end
 
   def strip_count(content)
-    stripped_content = Array(String).new
-
-    content.each_line do |line|
-      stripped_content << line[0, @length]
+    String.build do |io|
+      content.each_line do |line|
+        io.write(line.to_slice[0, @length])
+        io << '\n'
+      end
     end
-
-    stripped_content.join("\n")
   end
 
-  def download(client, range)
+  def download(client, range, count = 0)
     rhex = range_hex(range)
     headers = HTTP::Headers.new
     headers["user-agent"] = "pwned-password-downloader/#{@options.version}"
@@ -143,15 +143,24 @@ class DownloaderCLI
     end
 
     response = client.get("/range/#{rhex}#{@type_arg}", headers)
-    if response.status_code == 200
+    case response.status_code
+    when 200
       return write_file(range, response, rhex, strip_count(response.body)) if @options.strip == "count"
       return write_file(range, response, rhex, response.body.gsub("\r", "")) if @options.strip == "cr"
       return write_file(range, response, rhex, response.body)
-    elsif response.status_code == 304
-      return 0 # already downloaded
+    when 304
+      @successful.add(1)
+    when 500
+      if count >= 5
+        @failed << "#{rhex} failed to download with status code 500 after #{count} retries"
+        return
+      end
+
+      sleep((count * 1).seconds)
+      count += 1
+      download(client, range, count)
     else
       @failed << "#{rhex} failed to download with status code #{response.status_code}"
-      return 0
     end
   end
 
@@ -159,29 +168,45 @@ class DownloaderCLI
     # note: each fiber needs is own client as using a single client is not safe for
     # concurrent use by multiple fibers
     client = api_client
-    downloaded = 0
     loop do
-      if @ranges.size > 0
-        print "\rProgress: #{(((@count - @ranges.size) / @count) * 100).format(decimal_places: 3)}%"
-        downloaded += download(client, @ranges.pop)
-      else
-        @stats[fid] = downloaded
+      begin
+        range = @ranges.pop
+      rescue IndexError
         break
       end
+      download(client, range)
     end
   end
 
   def create_workers
-    return worker_download(0) if @options.parallelism == 1
-
-    wg = WaitGroup.new
-    @options.parallelism.times do |fid|
-      wg.spawn do
-        worker_download(fid)
+    stop = Atomic(Bool).new(false)
+    progress_total = (@count + 1).to_f64
+    progress_done = Channel(Nil).new
+    spawn(name: "progress") do
+      until stop.get
+        remaining = @ranges.size.to_f64
+        done = progress_total - remaining
+        pct = (done / progress_total) * 100.0
+        print("\rProgress: #{pct.format(decimal_places: 3)}%")
+        sleep(2.seconds)
       end
+      progress_done.send(nil)
     end
-    wg.wait
 
+    if @options.parallelism == 1
+      worker_download(0)
+    else
+      wg = WaitGroup.new
+      @options.parallelism.times do |fid|
+        wg.spawn do
+          worker_download(fid)
+        end
+      end
+      wg.wait
+    end
+
+    stop.set(true)
+    progress_done.receive
     puts
   end
 
@@ -192,11 +217,7 @@ class DownloaderCLI
   end
 
   def print_stats
-    total_downloads = 0
-    @stats.each do |_fid, downloads|
-      total_downloads += downloads
-    end
-    puts "Total successful downloads: #{total_downloads}"
+    puts "Total successful downloads: #{@successful.get}"
 
     if @failed.size > 0
       puts "Failures:\n\n#{@failed.join("\n")}"

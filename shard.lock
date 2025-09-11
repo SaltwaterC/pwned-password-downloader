@@ -1,10 +1,5 @@
 version: 2.0
 shards:
-  crystal-wait-group:
-    git: https://github.com/jasonrobot/crystal-wait-group.git
-    version: 0.3.0+git.commit.a8c9749eb2efa980e5bfeb53ba839c2631179ec6
-
   mt_helpers:
     git: https://github.com/neuralegion/mt_helpers.git
     version: 0.1.0+git.commit.d66f04da7a0e03e4c305e63d1a84e23e9bead83f
-
