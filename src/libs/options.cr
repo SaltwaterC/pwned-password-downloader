@@ -13,7 +13,7 @@ class DownloaderOptions
     @range = "" # avoid the ache of nilable types
     @no_etags = false
     @type = "sha1"
-    @strip = false
+    @strip = ""
 
     bin = File.basename(bin_path)
     @parser = OptionParser.new
@@ -120,7 +120,7 @@ class DownloaderOptions
       if types.includes?(opt)
         @type = opt
       else
-        STDERR.puts("ERROR: expecting one of #{types.join(", ")} as hash type")
+        STDERR.puts("ERROR: expecting one of #{types.join(", ")} as hash type. Got: #{opt}")
         STDERR.puts
         exit(3)
       end
@@ -128,9 +128,16 @@ class DownloaderOptions
   end
 
   def strip_option
-    desc_strip = "Whether to strip CR to leave LF line terminations only"
-    @parser.on("-s", "--strip", desc_strip) do
-      @strip = true
+    strip = ["cr", "count"]
+    desc_strip = "Specify what data to strip. One of: #{strip.join(", ")}. Note: count also strips CR"
+    @parser.on("-s", "--strip #{@strip}", desc_strip) do |opt|
+      if strip.includes?(opt)
+        @strip = opt
+      else
+        STDERR.puts("ERROR: expecting one of #{strip.join(", ")} as strip mode. Got: #{opt}")
+        STDERR.puts
+        exit(5)
+      end
     end
   end
 end

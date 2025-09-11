@@ -31,6 +31,10 @@ class DownloaderCLI
     if !@options.no_etags && File.exists?(@etags_file)
       @etags = Synchronized(Hash(Int64, String)).new(Hash(Int64, String).from_json(File.read(@etags_file)))
     end
+
+    # hash length - 10 bit range
+    @length = 35
+    @length = 27 if @options.type == "ntlm"
   end
 
   def start
@@ -110,6 +114,22 @@ class DownloaderCLI
     @etags[range] = response.headers["etag"] unless @options.no_etags
   end
 
+  def write_file(range, response, rhex, content)
+    File.write("#{@output_directory}/#{rhex}#{@type_add}.txt", content)
+    set_etag(range, response)
+    return 1
+  end
+
+  def strip_count(content)
+    stripped_content = Array(String).new
+
+    content.each_line do |line|
+      stripped_content << line[0, @length]
+    end
+
+    stripped_content.join("\n")
+  end
+
   def download(client, range)
     rhex = range_hex(range)
     headers = HTTP::Headers.new
@@ -124,15 +144,9 @@ class DownloaderCLI
 
     response = client.get("/range/#{rhex}#{@type_arg}", headers)
     if response.status_code == 200
-      if @options.strip
-        File.write("#{@output_directory}/#{rhex}#{@type_add}.txt", response.body.gsub("\r", ""))
-        set_etag(range, response)
-        return 1
-      end
-
-      File.write("#{@output_directory}/#{rhex}#{@type_add}.txt", response.body)
-      set_etag(range, response)
-      return 1
+      return write_file(range, response, rhex, strip_count(response.body)) if @options.strip == "count"
+      return write_file(range, response, rhex, response.body.gsub("\r", "")) if @options.strip == "cr"
+      return write_file(range, response, rhex, response.body)
     elsif response.status_code == 304
       return 0 # already downloaded
     else

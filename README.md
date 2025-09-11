@@ -12,7 +12,7 @@ Supports additional features not available in the official downloader:
  * Saves a single specified range in the output directory. Useful if a range fails to download.
  * Basic integrity checks i.e whether all files have been downloaded and their length is non-zero.
  * Option to strip CRLF to keep LF only (UNIX line termination) - shaves off about 0.5 GiB of disk space
- * TODO: option to strip counters - shaves off about 1.1 GiB of disk space
+ * Option to strip counters - shaves off about 1.1 GiB of disk space plus the space saving of lacking CR
 
 Missing feature from official downloader: single file mode. The single file mode is difficult to work with due to sheer size so it is rather useless by itself without either splitting the file or indexing the file. Both options (splitting and indexing) are time consuming and by default (this tool) or as an option (official downloader) gets the ranges as separate files anyway which are easy to query. Considering that there's no single archive to speed up the download as any tool would still need to send 1048576 requests to api.pwnedpasswords.com to get the ranges, this feature is rather useless by itself.
 
@@ -33,7 +33,7 @@ Usage: pwned-password-downloader
     -c, --check                      Check whether all ranges have been downloaded and whether their file size is > 0
     -n, --no-etags                   Disable checking the ETags while downloading the ranges. Effectively, downloads everything from scratch. Does not update ETag list/save ETag file.
     -t, --type sha1                  Specify the hash type to download. One of: sha1, ntlm
-    -s, --strip                      Whether to strip CR to leave LF line terminations only
+    -s, --strip                      Specify what data to strip. One of: cr, count. Note: count also strips CR
 
 ./pwned-password-downloader # 1st invoke - downloads everything in pwnedpasswords
 # beef up number of worker threads
