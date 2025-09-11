@@ -40,6 +40,7 @@ class DownloaderCLI
   def start
     return range_downloader if @options.range.size == 5
     return check_downloader if @options.check
+    return merge_downloads if @options.merge
     main_downloader
   end
 
@@ -52,30 +53,93 @@ class DownloaderCLI
     puts "Fetched: #{@options.output_directory}/#{@options.range}#{@type_add}.txt"
   end
 
-  # it isn't worth the effort to make this concurrent
-  # while it can shave off some execution time  there's a race condition that makes
-  # this unreliable and most fibers get 0 processed checks because the checks are
-  # stupid fast
   def check_downloader
-    checked = 0
-    iter = 0
-    while iter <= @count
-      range = range_hex(iter)
-      file = "#{@output_directory}/#{range}#{@type_add}.txt"
-      file_relative = "#{@options.output_directory}/#{range}#{@type_add}.txt"
-      if File.exists?(file)
-        if File.size(file) > 0
-          checked += 1
+    puts "Starting download checks for #{@options.type} type"
+    checked = Atomic(Int64).new(0_i64)
+    failures = Synchronized(Array(String)).new
+    next_idx = Atomic(Int64).new(0_i64)
+
+    worker = -> do
+      loop do
+        i = next_idx.add(1)
+        break if i > @count
+        rhex = range_hex(i)
+        file = "#{@output_directory}/#{rhex}#{@type_add}.txt"
+        file_relative = "#{@options.output_directory}/#{rhex}#{@type_add}.txt"
+        if File.exists?(file)
+          if File.size(file) > 0
+            checked.add(1)
+          else
+            failures << "ERROR: #{file_relative} is empty"
+          end
         else
-          STDERR.puts "ERROR: #{file_relative} is empty"
+          failures << "ERROR: #{file_relative} is missing"
         end
-      else
-        STDERR.puts "ERROR: #{file_relative} is missing"
       end
-      iter += 1
     end
 
-    puts "Total successful checks: #{checked}"
+    if @options.parallelism <= 1
+      worker.call
+    else
+      wg = WaitGroup.new
+      par = @options.parallelism
+      par.times do
+        wg.spawn { worker.call }
+      end
+      wg.wait
+    end
+
+    puts "Total successful checks: #{checked.get}"
+    if failures.size > 0
+      puts failures.join("\n")
+    end
+    return @count + 1 == checked.get
+  end
+
+  def merge_downloads
+    checked = check_downloader
+    unless checked
+      STDERR.puts "ERROR: local ranges failed checks. Can not merge inconsistent download"
+      exit(100)
+    end
+
+    puts "Merge downloaded ranges into: #{@options.merge_file}"
+
+    flush_every = 1024_i64
+    processed_ranges = 0_i64
+    progress_total = (@count + 1).to_f64
+    suffix_len = (@options.type == "ntlm") ? 27 : 35
+
+    File.open(@options.merge_file, "w+") do |io|
+      buffer = IO::Memory.new
+      idx = 0_i64
+      while idx <= @count
+        rhex = range_hex(idx)
+        path = "#{@output_directory}/#{rhex}#{@type_add}.txt"
+        File.each_line(path) do |line|
+          next if line.empty?
+
+          buffer << rhex
+          buffer << line
+          buffer << "\n"
+        end
+
+        processed_ranges += 1
+        if (processed_ranges % flush_every) == 0
+          io.write(buffer.to_slice)
+          buffer.clear
+          pct = (processed_ranges.to_f64 / progress_total) * 100.0
+          print "\rMerge progress: #{pct.format(decimal_places: 3)}%"
+        end
+
+        idx += 1
+      end
+
+      if buffer.bytesize > 0
+        io.write(buffer.to_slice)
+      end
+    end
+    print "\rMerge progress: 100.000%\n"
   end
 
   def main_downloader

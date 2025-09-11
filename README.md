@@ -14,7 +14,9 @@ Supports additional features not available in the official downloader:
  * Option to strip CRLF to keep LF only (UNIX line termination) - shaves off disk space
  * Option to strip counters - shaves off a measurable chunk of disk space plus the space saving of lacking CR
 
-Missing feature from official downloader: single file mode. The single file mode is difficult to work with due to sheer size so it is rather useless by itself without either splitting the file or indexing the file. Both options (splitting and indexing) are time consuming and by default (this tool) or as an option (official downloader) gets the ranges as separate files anyway which are easy to query. Considering that there's no single archive to speed up the download as any tool would still need to send 1048576 requests to api.pwnedpasswords.com to get the ranges, this feature is rather useless by itself.
+Saving in a single file is supported. This does not work like the official downloader which can output this when downloading the ranges. There are tradeoffs here and this project prioritises rapid download/redownload of individual range files. This means it trades disk efficiency for not having to sort the rages during download and leave the download workers to run lock free. The resulting merged file is sorted based on range, so the merging is inherently less efficient.
+
+A large file is useless by itself without indexing which does not make sense when the rages are already neatly split. However, in conjunction with stripping counters, this may be used with tools such as Hashcat so there are reasons for implementing this.
 
 The additional details about specific platforms build information is detailed in [Build Info](docs/BUILD_INFO.md).
 
