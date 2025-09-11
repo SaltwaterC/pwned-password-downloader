@@ -26,8 +26,8 @@ The additional details about specific platforms build information is detailed in
 # print help
 ./pwned-password-downloader -h
 Usage: pwned-password-downloader
-    -h, --help                       Show this help
     -v, --version                    Print version number
+    -h, --help                       Show this help
     -d, --output-directory pwnedpasswords
                                      Output directory. Defaults to pwnedpasswords
     -p, --parallelism 64             The number of parallel requests to make to Have I Been Pwned to download the hash ranges. Defaults to eight times the number of processors on the machine (64).
@@ -36,6 +36,8 @@ Usage: pwned-password-downloader
     -n, --no-etags                   Disable checking the ETags while downloading the ranges. Effectively, downloads everything from scratch. Does not update ETag list/save ETag file.
     -t, --type sha1                  Specify the hash type to download. One of: sha1, ntlm
     -s, --strip                      Specify what data to strip. One of: cr, count. Note: count also strips CR
+    -m, --merge [pwnedpasswords.sha1.txt]
+                                     Merge all downloaded ranges in a single file. Defaults to pwnedpasswords.TYPE.txt
 
 ./pwned-password-downloader # 1st invoke - downloads everything in pwnedpasswords
 # beef up number of worker threads
