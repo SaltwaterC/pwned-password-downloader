@@ -13,3 +13,4 @@ pwnedpasswords.*.txt
 downloader_*
 .gen/*
 build/*
+.crystal-cache/*
