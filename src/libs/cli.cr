@@ -214,7 +214,7 @@ class DownloaderCLI
       return write_file(range, response, rhex, response.body)
     when 304
       @successful.add(1)
-    when 500
+    when 500, 502
       if count >= 5
         @failed << "#{rhex} failed to download with status code 500 after #{count} retries"
         return
