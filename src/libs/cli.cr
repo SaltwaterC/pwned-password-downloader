@@ -108,7 +108,6 @@ class DownloaderCLI
     flush_every = 1024_i64
     processed_ranges = 0_i64
     progress_total = (@count + 1).to_f64
-    suffix_len = (@options.type == "ntlm") ? 27 : 35
 
     File.open(@options.merge_file, "w+") do |io|
       buffer = IO::Memory.new
@@ -216,7 +215,7 @@ class DownloaderCLI
       @successful.add(1)
     when 500, 502
       if count >= 5
-        @failed << "#{rhex} failed to download with status code 500 after #{count} retries"
+        @failed << "#{rhex} failed to download with status code #{response.status_code} after #{count} retries"
         return
       end
 
@@ -271,7 +270,7 @@ class DownloaderCLI
 
     stop.set(true)
     progress_done.receive
-    puts
+    print("\rProgress: 100%\n")
   end
 
   def write_etags
